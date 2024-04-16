@@ -20,7 +20,7 @@ ATL_GDAL
             Mosaic_2img_to_one, # 将两幅影像镶嵌至同一幅影像
             raster_overlap,     # 两个栅格数据集取重叠区或求交集（仅测试方形影像）
             crop_tif_with_json_zero, # ✔将带有坐标的图像按照json矢量进行裁切,无数据区域为0
-            crop_tif_with_json_nan,  # ✔将带有坐标的图像按照json矢量进行裁切,无数据区域为nan
+            crop_tif_with_json_nan,  # ✔将带有坐标的图像按照json矢量进行裁切,无数据区域为nan,支持alpha
             Merge_multi_json,   # ✔将多个小的json合并为一个大的json,
             resample_image      # ✔使用GDAL对图像进行重采样
         )
@@ -33,6 +33,7 @@ ATL_GDAL
     >>> img = read_img_to_array(img_path) # 读取图片为数组
     ________________________________________________________________
     >>> # 示例3:
+    
 
 """
 #!/usr/bin/env python
@@ -566,7 +567,7 @@ def raster_overlap(ds1, ds2, nodata1=None, nodata2=None):
 def crop_tif_with_json_zero(img_path: str,
                        output_path: str,
                        geojson_path: str):
-    '''✔将带有坐标的图像按照json矢量进行裁切,矢量外无数据区域为0
+    '''✔将带有坐标的图像按照json矢量进行裁切,矢量外无数据区域为0,适合训练
 
     Args:
         img_path (str): 输入图像的路径
@@ -607,7 +608,8 @@ def crop_tif_with_json_zero(img_path: str,
 
 def crop_tif_with_json_nan(img_path: str,
                            output_path: str,
-                           geojson_path: str) -> None:
+                           geojson_path: str,
+                           add_alpha_chan: bool = False) -> None:
     '''✔将带有坐标的图像按照json矢量进行裁切
     使无数据区域的值为nan,优先使用这个, 矢量外无数据区域为nan
 
@@ -615,6 +617,7 @@ def crop_tif_with_json_nan(img_path: str,
         img_path (str): 输入图像的路径
         output_path (str): 输出图像的路径
         geojson_path (str): Geojson文件的路径
+        add_alpha_chan (bool): 是否给RGB添加alpha通道
         
     Returns: 
         保存裁切后的图像至本地
@@ -645,11 +648,37 @@ def crop_tif_with_json_nan(img_path: str,
 
     # 执行裁剪
     gdal.Warp(output_path, raster_ds, options=warp_options)
-
     # 关闭数据源
     raster_ds = None
     geojson_ds = None
     print(f'根据矢量裁切{img_path}完成！无数据区域为 NaN')
+    if add_alpha_chan==True:
+        print(f'正在添加 alpha 通道...')
+
+        output_img_ds = gdal.Open(output_path)
+        Transform = output_img_ds.GetGeoTransform()
+        Projection = output_img_ds.GetProjection()
+
+        output_img = output_img_ds.ReadAsArray()
+        output_img = np.transpose(output_img, (1, 2, 0))
+        h,w,c = output_img.shape
+
+        alpha_posi_array = np.zeros((h, w), dtype=np.uint8)
+        alpha_band_sum = np.zeros((h, w), dtype=np.uint16)
+        alpha_band_sum = output_img.sum(2)
+        
+        alpha_posi_array[alpha_band_sum==0]=0
+        alpha_posi_array[alpha_band_sum!=0]=255
+
+        alpha_image_array = cv2.merge((output_img, alpha_posi_array))
+        # 保存带有Alpha通道的图像
+        save_array_to_tif(img_array = alpha_image_array,
+                            out_path = output_path, # 覆盖图像
+                            Transform = Transform,
+                            Projection = Projection,
+                            Datatype = 1)
+
+
 
 def Merge_multi_json(input_json_file: str,
                      output_json: str) -> None:
