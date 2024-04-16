@@ -1,14 +1,15 @@
 # ATL_Tools 使用指南
-## 1. 简介
-ATL_Tools 是一个由[AI-Tianlong](https://github.com/AI-Tianlong)开发的工具集合，包含一些便利的小工具
-### 1. 文件夹/数据绝对路径搜索工具
+## 0. 简介
+ATL_Tools 是一个由 [AI-Tianlong【GitHub】](https://github.com/AI-Tianlong)开发的工具集合，包含一些便利的小工具。
+如果您有新的模块添加，或者对现有模块有改进意见，欢迎提交 PR 至  [ATL_Tools_pypi 【GitHub Repo】](https://github.com/AI-Tianlong/ATL_Tools_pypi).
+## 1. 文件夹/数据绝对路径搜索工具
 加载方式:
 
 ```python
 from ATL_Tools import mkdir_or_exist, find_data_list
 ```
 
-### 2. 遥感图像处理工具:
+## 2. 遥感图像处理工具:
 加载方式:
 ```python
 from ATL_Tools.ATL_gdal import (
@@ -29,9 +30,9 @@ from ATL_Tools.ATL_gdal import (
     resample_image      # ✔使用GDAL对图像进行重采样
                         )
 ```
-## 2. 使用方法
+## 3. 使用方法
 
-### 2.1 ATL_path 文件夹工具
+### 3.1 ATL_path 文件夹工具
 
 使用程序示例:  
 1. 创建文件夹
@@ -45,7 +46,7 @@ from ATL_Tools.ATL_gdal import (
     ```python
     img_lists = find_data_list(img_root_path='数据集文件夹路径', suffix ='.jpg')
     ```
-### 2.2 ATL_gdal 遥感图像处理工具
+### 3.2 ATL_gdal 遥感图像处理工具
 使用程序示例：
 1. 根据矢量批量裁切影像
     ```python
@@ -69,10 +70,11 @@ from ATL_Tools.ATL_gdal import (
         crop_tif_with_json_nan(img_path, img_output_path, json_path)
     ```
 
-## 3. 版本更新日志
+## 4. 版本更新日志
 - 2023-12-06 v1.0.2 修复README中显示问题。
 - 2023-12-06 v1.0.3 修改项目名称为ATL_Tools。
 - 2024-04-03 v1.0.6 增加ATL_gdal模块，用于处理遥感影像。
 - 2024-04-09 v1.0.7 修复ATL_gdal模块中对于ATL_path的引用，`__init__.py` 注释掉`from ATL_gdal import *`, 可不安装gdal使用ATL_Tools
 - 2024-04-16 v1.0.8 修复 `ValueError: cannot convert float NaN to integer` in ATL_gdal Line 371
 - 2024-04-16 v1.0.9 修复 修复`Mosaic_all_images()`对于mosaic RGB uint8标签的支持，优化`find_data_list()`函数显示，优化`_init_.py`, 优化`Readme.md`显示
+- 2024-04-16 v1.1.0 pypi页面增加`ATL_Tools`Github贡献地址。
