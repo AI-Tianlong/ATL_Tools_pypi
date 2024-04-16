@@ -1,0 +1,12 @@
+  [build-system]
+    requires = ["setuptools", "setuptools-scm"]
+    build-backend = "setuptools.build_meta"
+    
+  [project]   
+
+    name = "ATL_Tools"
+    version = "1.0.9"
+    description = "AI-Tianlong的Tools打包，开箱即用, 包含ATL_path和ATL_gdal,可用于文件夹创建、文件搜索、遥感图像处理"
+    readme = "README.md"
+    keywords= ["ATL_Tools", "GDAL", "AI-Tianlong", "Chinese"]
+    license = {text = "MIT License"}
