@@ -14,18 +14,9 @@ ATL_path
     ________________________________________________________________
     >>> # 示例2-寻找所有符合后缀文件夹名称(绝对路径):
     >>> # 寻找尾缀为'.jpg'的数据集列表
-    >>> find_data_list(img_root_path: str, suffix: str ='.jpg') 
-    ________________________________________________________________
-    >>> # 示例3-寻找所有符合后缀文件夹名称:
-    >>> for label_path in scandir(dataset_path, suffix='.png', recursive=True):
-    >>>     if 'labels' in label_path and 'labels_mask' not in label_path:
-    >>>         rgb_label_path = osp.join(dataset_path, label_path)
-    >>>         RGB_labels_path.append(rgb_label_path)
-    >>>         if 'v1.2' in label_path:
-    >>>             RGB_labels_v1_2_path.append(rgb_label_path)
-    >>>         elif 'v2.0' in label_path:
-    >>>             RGB_labels_v2_0_path.append(rgb_label_path)
-
+    >>> img_list = find_data_list(img_root_path: str, suffix: str ='.jpg') 
+        for img_path in tqdm(img_list):
+            print(img_path)
 """
 
 import os
