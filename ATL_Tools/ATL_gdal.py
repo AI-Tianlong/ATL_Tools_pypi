@@ -258,7 +258,8 @@ def geo_to_pix(dataset, x, y):
 def Mosaic_all_imgs(img_file_path: str,
                     output_path: str,
                     add_alpha_chan: bool=False,
-                    nan_or_zero: str='zero') -> None:
+                    nan_or_zero: str='zero',
+                    output_band_chan: int=1) -> None:
     
     '''✔将指定路径文件夹下的tif影像全部镶嵌到一张影像上
         细节测试:
@@ -281,6 +282,7 @@ def Mosaic_all_imgs(img_file_path: str,
         add_alpha_chan (bool): 是否添加alpha通道，将无数据区域显示为空白，默认为False
         Nan_or_Zero (str): 'nan'或'zero'镶嵌后的无效数据nan或0,默认为0
                            'nan'更适合显示，'0更适合训练'
+        output_band_chan (int): 对于多光谱图像，如果只想保存前3个通道的话，指定通道数
         
         例子: Mosaic_all_imgs(img_path_all, output_path, add_alpha_chan=True) # 对于RGB标签，添加alpha通道
               Mosaic_all_imgs(img_path_all, output_path, Nan_or_Zero='zero') # 对于float32 img，mosaic为zero
@@ -328,13 +330,18 @@ def Mosaic_all_imgs(img_file_path: str,
 
     columns=math.ceil((max_x-min_x)/width_geo_resolution) 
     rows=math.ceil((max_y-min_y)/(-heigh_geo_resolution))
-    bands = in_ds.RasterCount
+    
+    bands = in_ds.RasterCount  # 读进来的bands
+    if not output_band_chan==None:
+        bands = output_band_chan
+        print("  【ATL-LOG】人为指定输出波段数为:", bands)
     print(f'新合并图像的尺寸: {rows, columns, bands}')
 
     in_band_DataType = in_ds.GetRasterBand(1).DataType
 
     driver=gdal.GetDriverByName('GTiff')
-    out_ds=driver.Create(output_path, columns, rows, bands, in_band_DataType)
+    # out_ds=driver.Create(output_path, columns, rows, bands, in_band_DataType)
+    out_ds=driver.Create(output_path, columns, rows, 3, in_band_DataType)
     out_ds.SetProjection(in_ds.GetProjection())
     geotrans[0] = min_x
     geotrans[3] = max_y
@@ -391,11 +398,20 @@ def Mosaic_all_imgs(img_file_path: str,
     # 如果是float32图像的话,nan是可以work的,则会让无数据的地方变成nan,显示的时候就是透明的
     elif nan_or_zero=='nan' and add_alpha_chan==False:
         print(f"  【ATL-LOG】空缺部分为'nan', 不添加alpha通道,支持-float32img")
-        for band_num in range(bands):
-            out_band = out_ds.GetRasterBand(band_num + 1)
-            big_out_band_nan = out_band.ReadAsArray()
-            big_out_band_nan[big_out_band_nan==0.] = np.nan
-            out_band.WriteArray(big_out_band_nan)
+        output_img_ds = gdal.Open(output_path)
+        Transform = output_img_ds.GetGeoTransform()
+        Projection = output_img_ds.GetProjection()
+        
+        img_nan = output_img_ds.ReadAsArray()
+        img_nan = img_nan.transpose(1,2,0)
+        img_nan[img_nan==0.] = np.nan
+
+        save_array_to_tif(img_array = img_nan,
+                          out_path = output_path, # 覆盖图像
+                          Transform = Transform,
+                          Projection = Projection,
+                          Datatype = output_img_ds.GetRasterBand(1).DataType,
+                          Band = bands)
 
     # 如果创建的图像是uint8的话，nan是不行的，只能用0,添加alpha通道
     elif add_alpha_chan==True:
@@ -421,7 +437,8 @@ def Mosaic_all_imgs(img_file_path: str,
                           out_path = output_path, # 覆盖图像
                           Transform = Transform,
                           Projection = Projection,
-                          Datatype = 1)
+                          Datatype = output_img_ds.GetRasterBand(1).DataType,
+                          Band = bands)
 
     else:
         print(f'--> 暂不支持此数据组合的合Mosaic')
