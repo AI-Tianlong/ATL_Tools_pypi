@@ -22,7 +22,8 @@ ATL_GDAL
             crop_tif_with_json_zero, # ✔将带有坐标的图像按照json矢量进行裁切,无数据区域为0
             crop_tif_with_json_nan,  # ✔将带有坐标的图像按照json矢量进行裁切,无数据区域为nan,支持alpha
             Merge_multi_json,   # ✔将多个小的json合并为一个大的json,
-            resample_image      # ✔使用GDAL对图像进行重采样
+            resample_image,      # ✔使用GDAL对图像进行重采样
+            shp_to_geojson,      # ✔将shp文件转为geojson文件
         )
                             
     ________________________________________________________________
@@ -157,6 +158,7 @@ def save_array_to_tif(
     """
 
     h,w,c= img_array.shape
+
     print(img_array.shape)
     driver = gdal.GetDriverByName("GTiff")
     ds = driver.Create(out_path, w, h, c, Datatype)
@@ -258,7 +260,9 @@ def geo_to_pix(dataset, x, y):
 def Mosaic_all_imgs(img_file_path: str,
                     output_path: str,
                     add_alpha_chan: bool=False,
-                    nan_or_zero: str='zero') -> None:
+                    nan_or_zero: str='zero',
+                    output_band_chan: int=1,
+                    img_list:List[str]=None) -> None:
     
     '''✔将指定路径文件夹下的tif影像全部镶嵌到一张影像上
         细节测试:
@@ -281,6 +285,8 @@ def Mosaic_all_imgs(img_file_path: str,
         add_alpha_chan (bool): 是否添加alpha通道，将无数据区域显示为空白，默认为False
         Nan_or_Zero (str): 'nan'或'zero'镶嵌后的无效数据nan或0,默认为0
                            'nan'更适合显示，'0更适合训练'
+        output_band_chan (int): 对于多光谱图像，如果只想保存前3个通道的话，指定通道数
+        img_list (List[str]):  需要镶嵌的影像列表，默认为None
         
         例子: Mosaic_all_imgs(img_path_all, output_path, add_alpha_chan=True) # 对于RGB标签，添加alpha通道
               Mosaic_all_imgs(img_path_all, output_path, Nan_or_Zero='zero') # 对于float32 img，mosaic为zero
@@ -293,11 +299,19 @@ def Mosaic_all_imgs(img_file_path: str,
     # os.chdir(img_file_path) # 切换到指定路径
     #如果存在同名影像则先删除
     if os.path.exists(output_path):
-        print(f"存在{output_path}, 已覆盖")
+        print(f"  【ATL-LOG】存在{output_path}, 已覆盖")
         os.remove(output_path)
 
-    all_files = find_data_list(img_file_path, suffix='.tif') # 寻找所有tif文件
+    # 如果不指定的话，就找所有的tif文件
+    if img_list == None:
+        print("  【ATL-LOG】未指定img_list, 寻找所有tif文件...")
+        all_files = find_data_list(img_file_path, suffix='.tif') # 寻找所有tif文件
+       
+    elif img_list != None:
+        print("  【ATL-LOG】指定img_list, 寻找指定的tif文件...")
+        all_files = img_list
     assert all_files!=None, 'No tif files found in the path'
+    print(f"  【ATL-LOG】本次镶嵌的影像有{len(all_files)}张")
 
     #获取待镶嵌栅格的最大最小的坐标值
     min_x,max_y,max_x,min_y=read_img_get_geo(all_files[0]) 
@@ -307,11 +321,7 @@ def Mosaic_all_imgs(img_file_path: str,
         min_y = min(min_y, miny)
         max_x = max(max_x, maxx)
         max_y = max(max_y, maxy)
-    # print("待镶嵌栅格的最大最小的坐标值")
-    # print(f'min_x:{min_x}, min_y:{min_y}')
-    # print(f'max_x:{max_x}, max_y:{max_y}')
 
-    
     #计算镶嵌后影像的行列号
     in_ds=gdal.Open(all_files[0])
     geotrans=list(in_ds.GetGeoTransform())
@@ -328,8 +338,12 @@ def Mosaic_all_imgs(img_file_path: str,
 
     columns=math.ceil((max_x-min_x)/width_geo_resolution) 
     rows=math.ceil((max_y-min_y)/(-heigh_geo_resolution))
-    bands = in_ds.RasterCount
-    print(f'新合并图像的尺寸: {rows, columns, bands}')
+    
+    bands = in_ds.RasterCount  # 读进来的bands
+    if not output_band_chan==None:
+        bands = output_band_chan
+        print("  【ATL-LOG】人为指定输出波段数为:", bands)
+    print(f'  【ATL-LOG】新合并图像的尺寸: {rows, columns, bands}')
 
     in_band_DataType = in_ds.GetRasterBand(1).DataType
 
@@ -354,8 +368,8 @@ def Mosaic_all_imgs(img_file_path: str,
         x, y = map(int, offset)
         # print(f'逆变换后的像素：x:{x}, y:{y}')
         # 该函数返回一个转换器对象 trans，可以使用这个对象执行从输入数据集到输出数据集的坐标转换
-        trans = gdal.Transformer(in_ds, out_ds, [])       #in_ds是源栅格，out_ds是目标栅格
-        success, xyz = trans.TransformPoint(False, 0, 0)  #计算in_ds中左上角像元对应out_ds中的行列号
+        trans = gdal.Transformer(in_ds, out_ds, [])       # in_ds是源栅格，out_ds是目标栅格
+        success, xyz = trans.TransformPoint(False, 0, 0)  # 计算in_ds中左上角像元对应out_ds中的行列号
         x, y, z = map(int, xyz)
         # print(f'小图(0, 0)变换到大图的像素：(x:{x}, y:{y}, z:{z})')
 
@@ -366,7 +380,7 @@ def Mosaic_all_imgs(img_file_path: str,
             # 把nan的地方，用0替代
             in_ds_array = np.nan_to_num(in_ds_array, nan=0.)
 
-            # 大图的单通道，(h,w)，没数据的地方全是0
+            # 最后合并的大图的波段通道，(h,w)，没数据的地方全是0
             big_out_band = out_ds.GetRasterBand(band_num + 1)
             # 大图中，小图区域的数据
             Tiny_in_BigOut_data = big_out_band.ReadAsArray(x, y, in_ds_array.shape[1], in_ds_array.shape[0])
@@ -391,11 +405,20 @@ def Mosaic_all_imgs(img_file_path: str,
     # 如果是float32图像的话,nan是可以work的,则会让无数据的地方变成nan,显示的时候就是透明的
     elif nan_or_zero=='nan' and add_alpha_chan==False:
         print(f"  【ATL-LOG】空缺部分为'nan', 不添加alpha通道,支持-float32img")
-        for band_num in range(bands):
-            out_band = out_ds.GetRasterBand(band_num + 1)
-            big_out_band_nan = out_band.ReadAsArray()
-            big_out_band_nan[big_out_band_nan==0.] = np.nan
-            out_band.WriteArray(big_out_band_nan)
+        output_img_ds = gdal.Open(output_path)
+        Transform = output_img_ds.GetGeoTransform()
+        Projection = output_img_ds.GetProjection()
+        
+        img_nan = output_img_ds.ReadAsArray()
+        img_nan = img_nan.transpose(1,2,0)
+        img_nan[img_nan==0.] = np.nan
+
+        save_array_to_tif(img_array = img_nan,
+                          out_path = output_path, # 覆盖图像
+                          Transform = Transform,
+                          Projection = Projection,
+                          Datatype = output_img_ds.GetRasterBand(1).DataType,
+                          Band = bands)
 
     # 如果创建的图像是uint8的话，nan是不行的，只能用0,添加alpha通道
     elif add_alpha_chan==True:
@@ -421,7 +444,8 @@ def Mosaic_all_imgs(img_file_path: str,
                           out_path = output_path, # 覆盖图像
                           Transform = Transform,
                           Projection = Projection,
-                          Datatype = 1)
+                          Datatype = output_img_ds.GetRasterBand(1).DataType,
+                          Band = bands)
 
     else:
         print(f'--> 暂不支持此数据组合的合Mosaic')
@@ -745,6 +769,36 @@ def resample_image(input_path: str,
 
     # 关闭数据集
     input_ds = None
+
+def shp_to_geojson(input_shp: str, output_geojson: str) -> None:
+    """把 Shapefile 文件转换为 GeoJSON 文件
+    
+    Args:
+        input_shp (str): 输入的shp路径xxx.shp 
+        output_geojson (str): 输出的json路径xxx.json
+        
+    Returns:
+        保存输入的shp为Geojson
+    
+    示例：
+    >>> # 将一个shp文件转换为geojson文件
+    >>> shp_path = './nan值的shp文件/'
+    >>> shp_list = find_data_list(shp_path, '.shp')
+    >>> for shp_ in tqdm(shp_list):
+    >>> output_geojson = os.path.join('./nan的json/', os.path.basename(shp_).split('.')[0]+'.json')
+    >>> shp_to_geojson(shp_, output_geojson)
+
+    """
+    # 构建ogr2ogr命令
+    ogr2ogr_cmd = [
+        'ogr2ogr',   # 命令名称
+        '-f', 'GeoJSON',   # 输出格式为GeoJSON
+        output_geojson,    # 输出文件路径
+        input_shp   # 输入Shapefile文件路径
+    ]
+
+    # 调用ogr2ogr工具执行转换
+    subprocess.run(ogr2ogr_cmd)
 
     
 
