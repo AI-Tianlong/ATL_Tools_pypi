@@ -314,13 +314,14 @@ def Mosaic_all_imgs(img_file_path: str,
     print(f"  【ATL-LOG】本次镶嵌的影像有{len(all_files)}张")
 
     #获取待镶嵌栅格的最大最小的坐标值
-    min_x,max_y,max_x,min_y=read_img_get_geo(all_files[0]) 
+    min_x, max_y, max_x, min_y = read_img_get_geo(all_files[0]) 
     for in_fn in all_files:
-        minx, maxy, maxx, miny=read_img_get_geo(in_fn)
+        minx, maxy, maxx, miny = read_img_get_geo(in_fn)
         min_x = min(min_x, minx)
         min_y = min(min_y, miny)
         max_x = max(max_x, maxx)
         max_y = max(max_y, maxy)
+
 
     #计算镶嵌后影像的行列号
     in_ds=gdal.Open(all_files[0])
@@ -332,23 +333,23 @@ def Mosaic_all_imgs(img_file_path: str,
     # 左上角的Y坐标、Y方向的旋转（通常为0）、垂直像素分辨率。
     # 这一行代码将获取的元组转换为列表形式，并赋值给 geotrans。
 
-    width_geo_resolution=geotrans[1]
-    heigh_geo_resolution=geotrans[5]
+    width_geo_resolution = geotrans[1]
+    heigh_geo_resolution = geotrans[5]
     # print(f'width_geo_resolution:{width_geo_resolution}, heigh_geo_resolution:{heigh_geo_resolution}')
 
-    columns=math.ceil((max_x-min_x)/width_geo_resolution) 
-    rows=math.ceil((max_y-min_y)/(-heigh_geo_resolution))
-    
+    columns = math.ceil((max_x-min_x) / width_geo_resolution) + 50 # 有几个像素的偏差，所以会导致小图超出大图范围！！！ 
+    rows = math.ceil((max_y-min_y) / (-heigh_geo_resolution)) + 50 # 有几个像素的偏差，所以会导致小图超出大图范围！！！ 
+
     bands = in_ds.RasterCount  # 读进来的bands
     if not output_band_chan==None:
         bands = output_band_chan
         print("  【ATL-LOG】人为指定输出波段数为:", bands)
-    print(f'  【ATL-LOG】新合并图像的尺寸: {rows, columns, bands}')
+    print(f'  【ATL-LOG】新合并图像的尺寸: {rows, columns, bands} (高，宽，波段)')
 
     in_band_DataType = in_ds.GetRasterBand(1).DataType
 
-    driver=gdal.GetDriverByName('GTiff')
-    out_ds=driver.Create(output_path, columns, rows, bands, in_band_DataType)
+    driver = gdal.GetDriverByName('GTiff')
+    out_ds = driver.Create(output_path, columns, rows, bands, in_band_DataType)
     out_ds.SetProjection(in_ds.GetProjection())
     geotrans[0] = min_x
     geotrans[3] = max_y
@@ -356,13 +357,15 @@ def Mosaic_all_imgs(img_file_path: str,
 
 
     #定义仿射逆变换
-    inv_geotrans=gdal.InvGeoTransform(geotrans)
+    inv_geotrans = gdal.InvGeoTransform(geotrans)
 
     #开始逐渐写入
-    for in_fn in tqdm(all_files, desc='正在镶嵌图像ing...'):
+    for in_fn in tqdm(all_files, desc='正在镶嵌图像ing...', colour='GREEN'):
         print('正在镶嵌:', os.path.abspath(in_fn))
         in_ds = gdal.Open(in_fn)
         in_gt = in_ds.GetGeoTransform()
+        # print(f'  【ATL-LOG】读入图像的尺寸：{in_ds.RasterYSize, in_ds.RasterXSize} (高，宽)')
+
         #仿射逆变换
         offset = gdal.ApplyGeoTransform(inv_geotrans, in_gt[0], in_gt[3])
         x, y = map(int, offset)
@@ -371,7 +374,7 @@ def Mosaic_all_imgs(img_file_path: str,
         trans = gdal.Transformer(in_ds, out_ds, [])       # in_ds是源栅格，out_ds是目标栅格
         success, xyz = trans.TransformPoint(False, 0, 0)  # 计算in_ds中左上角像元对应out_ds中的行列号
         x, y, z = map(int, xyz)
-        # print(f'小图(0, 0)变换到大图的像素：(x:{x}, y:{y}, z:{z})')
+        # print(f'  【ATL-LOG】小图(0, 0)变换到大图的像素：(({y},{x}), ({y+in_ds.RasterYSize},{x+in_ds.RasterXSize}))')
 
         for band_num in range(bands):
             # 小图的单通道，(h,w),无数据全是nan
@@ -392,18 +395,21 @@ def Mosaic_all_imgs(img_file_path: str,
             # 第三部：把两个图相加，得到最后的结果
             zero_mask_in_tiny_of_big = Tiny_in_BigOut_data!=0.
             in_ds_array[zero_mask_in_tiny_of_big] = 0.
+            # print(f'小图的尺寸{in_ds_array.shape}')
+            # print(f'大图中小图尺寸：{Tiny_in_BigOut_data.shape}')
+            
             in_ds_array = Tiny_in_BigOut_data + in_ds_array
 
             # 写入大图
             big_out_band.WriteArray(in_ds_array, x, y)
     del in_ds, out_ds # 必须要有这个
 
-    if nan_or_zero=='zero' and add_alpha_chan==False:
+    if nan_or_zero == 'zero' and add_alpha_chan == False:
         print(f"  【ATL-LOG】空缺部分为'zero', 不添加alpha通道, 支持float32-img、uint8-label")
         pass
     # 最后把所有为0.的地方都变成nan
     # 如果是float32图像的话,nan是可以work的,则会让无数据的地方变成nan,显示的时候就是透明的
-    elif nan_or_zero=='nan' and add_alpha_chan==False:
+    elif nan_or_zero == 'nan' and add_alpha_chan ==  False:
         print(f"  【ATL-LOG】空缺部分为'nan', 不添加alpha通道,支持-float32img")
         output_img_ds = gdal.Open(output_path)
         Transform = output_img_ds.GetGeoTransform()
@@ -421,7 +427,7 @@ def Mosaic_all_imgs(img_file_path: str,
                           Band = bands)
 
     # 如果创建的图像是uint8的话，nan是不行的，只能用0,添加alpha通道
-    elif add_alpha_chan==True:
+    elif add_alpha_chan == True:
         print(f"  【ATL-LOG】添加alpha通道,支持uint8-rgb-img uint8-RGB-label")
         output_img_ds = gdal.Open(output_path)
         Transform = output_img_ds.GetGeoTransform()
