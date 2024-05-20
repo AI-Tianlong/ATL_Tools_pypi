@@ -24,6 +24,8 @@ ATL_GDAL
             Merge_multi_json,   # ✔将多个小的json合并为一个大的json,
             resample_image,      # ✔使用GDAL对图像进行重采样
             shp_to_geojson,      # ✔将shp文件转为geojson文件
+            cut_image_with_overlap, # 将大图裁切为小图，支持重叠
+
         )
                             
     ________________________________________________________________
@@ -806,8 +808,66 @@ def shp_to_geojson(input_shp: str, output_geojson: str) -> None:
     # 调用ogr2ogr工具执行转换
     subprocess.run(ogr2ogr_cmd)
 
-    
+def cut_image_with_overlap(input_file, output_dir, tile_size=5000, overlap=500):
+    """将大图裁切成小图，以供GPU可以进行推理
+    Args:
+        input_file (str): 输入图像路径
+        output_dir (str): 输出图像路径
+        tile_size (int): 图像块的大小，默认为5000
+        overlap (int): 图像块的重叠大小，默认为500
 
+    Returns: 
+        None, 保存裁切后的图像至指定目录。
+    """
+    # 打开输入图像
+    dataset = gdal.Open(input_file)
+    if not dataset:
+        raise FileNotFoundError(f"Unable to open {input_file}")
+
+    # 获取图像尺寸
+    width = dataset.RasterXSize
+    height = dataset.RasterYSize
+
+    # 获取投影和地理变换信息
+    projection = dataset.GetProjection()
+    geotransform = dataset.GetGeoTransform()
+
+    # 计算图像块的步长（减去重叠部分）
+    step_size = tile_size - overlap
+
+    # 计算图像块的数量
+    x_tiles = (width + step_size - 1) // step_size
+    y_tiles = (height + step_size - 1) // step_size
+    print(f'正在裁切 {input_file} ...')
+    print(f'该图像将被裁切为 {x_tiles*y_tiles} 个 {tile_size}x{tile_size} 的小图....')
+
+    for i in range(x_tiles):
+        for j in range(y_tiles):
+            # 计算图像块的像素范围
+            x_offset = i * step_size
+            y_offset = j * step_size
+
+            # 计算实际读取的像素范围
+            x_size = min(tile_size, width - x_offset)
+            y_size = min(tile_size, height - y_offset)
+
+            # 计算输出的地理范围
+            minx = geotransform[0] + x_offset * geotransform[1] + y_offset * geotransform[2]
+            maxy = geotransform[3] + x_offset * geotransform[4] + y_offset * geotransform[5]
+            maxx = minx + x_size * geotransform[1] + y_size * geotransform[2]
+            miny = maxy + x_size * geotransform[4] + y_size * geotransform[5]
+
+            # 裁切图像块
+            output_img_path = os.path.join(output_dir,f'{os.path.basename(input_file).split(".")[0]}_{i}_{j}.tif')
+            gdal.Translate(
+                output_img_path,
+                dataset,
+                srcWin=[x_offset, y_offset, x_size, y_size],
+                format='GTiff',
+                outputSRS=projection,
+                outputBounds=[minx, miny, maxx, maxy]
+            )
+    print(f"{input_file} 已经裁切完成")
 
 
 
