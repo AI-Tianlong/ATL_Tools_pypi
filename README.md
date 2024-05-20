@@ -29,6 +29,7 @@ from ATL_Tools.ATL_gdal import (
     Merge_multi_json,   # ✔将多个小的json合并为一个大的json,
     resample_image,      # ✔使用GDAL对图像进行重采样
     shp_to_geojson,      # ✔将shp文件转为geojson文件
+    cut_image_with_overlap, # 将大图裁切为小图，支持重叠
                         )
 ```
 ## 3. 使用方法
@@ -84,3 +85,4 @@ from ATL_Tools.ATL_gdal import (
 - 2024-04-18 v1.1.3 修复 ATL_gdal Mosaic中对float32图像背景设置为nan的支持
 - 2024-04-24 v1.1.4 修复 ATL_gdal Mosaic中指定img_list功能的支持，可以指定Mosaic的图像，增加`shp`转换为`Geojson`的功能函数`shp_to_geojson()`
 - 2024-05-06 v1.1.5 修复 ATL_gdal 中 `Mosaic_all_imgs()`函数在某些情况下，可能导致计算出的合并后的大图尺寸要比嵌入的小图位置要小几个像素，在 line 340 代码中，给图像的高宽各+50像素，暂时避免了这个问题。
+- 2024-05-20 v1.1.6 ATL_gdal 中 增加 `cut_image_with_overlap()`支持将大图裁切成指定尺寸的小图，并带有坐标。
