@@ -22,9 +22,9 @@ ATL_GDAL
             crop_tif_with_json_zero, # ✔将带有坐标的图像按照json矢量进行裁切,无数据区域为0
             crop_tif_with_json_nan,  # ✔将带有坐标的图像按照json矢量进行裁切,无数据区域为nan,支持alpha
             Merge_multi_json,   # ✔将多个小的json合并为一个大的json,
-            resample_image,      # ✔使用GDAL对图像进行重采样
-            shp_to_geojson,      # ✔将shp文件转为geojson文件
-            cut_image_with_overlap, # 将大图裁切为小图，支持重叠
+            resample_image,     # ✔使用GDAL对图像进行重采样
+            shp_to_geojson,     # ✔将shp文件转为geojson文件
+            clip_big_image,     # 将大图裁切为小图，支持重叠
 
         )
                             
