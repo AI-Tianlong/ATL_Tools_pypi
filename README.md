@@ -1,5 +1,5 @@
 # ATL_Tools 使用指南
-最新版本 v1.1.6
+最新版本 v1.1.8
 ## 0. 简介
 ATL_Tools 是一个由 [AI-Tianlong【GitHub】](https://github.com/AI-Tianlong)开发的工具集合，包含一些便利的小工具。
 如果您有新的模块添加，或者对现有模块有改进意见，欢迎提交 PR 至  [ATL_Tools_pypi 【GitHub Repo】](https://github.com/AI-Tianlong/ATL_Tools_pypi).
@@ -88,3 +88,4 @@ from ATL_Tools.ATL_gdal import (
 - 2024-05-06 v1.1.5 修复 ATL_gdal 中 `Mosaic_all_imgs()`函数在某些情况下，可能导致计算出的合并后的大图尺寸要比嵌入的小图位置要小几个像素，在 line 340 代码中，给图像的高宽各+50像素，暂时避免了这个问题。
 - 2024-05-20 v1.1.6 ATL_gdal 中 增加 `cut_image_with_overlap()`支持将大图裁切成指定尺寸的小图，并带有坐标。
 - 2024-05-28 v1.1.7 ATL_gdal 中 修改 v1.1.6 中新增函数 为`clip_big_image()`。ATL_gdal中`crop_tif_with_json_zero()`和`crop_tif_with_json_nan()`支持传入参数 `img_path(str)` 或 `img_path(gdal.Dataset)`。
+- 2024-06-17 v1.1.8 ATL_gdal 中修复 `crop_tif_with_json_zero()`和`crop_tif_with_json_nan()` ，对于传入(gdal.Dataset)而导致错误的路劲打印。

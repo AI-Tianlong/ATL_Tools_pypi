@@ -669,7 +669,10 @@ def crop_tif_with_json_zero(img_path: Union[str, gdal.Dataset],
     # 关闭数据源
     raster_ds = None
     geojson_ds = None
-    print(f'根据矢量裁切{img_path}完成！无数据区域为0')
+    if isinstance(img_path, str):
+        print(f'根据矢量裁切{img_path}完成！无数据区域为0')
+    elif isinstance(img_path, gdal.Dataset):
+        print(f'根据矢量裁切完成！无数据区域为0')
 
 def crop_tif_with_json_nan(img_path: Union[str, gdal.Dataset],
                            output_path: str,
@@ -720,7 +723,12 @@ def crop_tif_with_json_nan(img_path: Union[str, gdal.Dataset],
     # 关闭数据源
     raster_ds = None
     geojson_ds = None
-    print(f'根据矢量裁切{img_path}完成！无数据区域为 NaN')
+    
+    if isinstance(img_path, str):
+        print(f'根据矢量裁切{img_path}完成！无数据区域为0')
+    elif isinstance(img_path, gdal.Dataset):
+        print(f'根据矢量裁切完成！无数据区域为0')
+    
     if add_alpha_chan==True:
         print(f'正在添加 alpha 通道...')
 
@@ -746,6 +754,7 @@ def crop_tif_with_json_nan(img_path: Union[str, gdal.Dataset],
                             Transform = Transform,
                             Projection = Projection,
                             Datatype = 1)
+
 
 
 
