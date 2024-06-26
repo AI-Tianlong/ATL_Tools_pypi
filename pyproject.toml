@@ -5,7 +5,7 @@
   [project]   
 
     name = "ATL_Tools"
-    version = "1.1.9"
+    version = "1.2.0"
     description = "AI-Tianlong的Tools打包，开箱即用, 包含ATL_path和ATL_gdal,可用于文件夹创建、文件搜索、遥感图像处理"
     readme = "README.md"
     keywords= ["ATL_Tools", "GDAL", "AI-Tianlong", "Chinese"]
