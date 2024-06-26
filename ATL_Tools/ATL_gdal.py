@@ -795,13 +795,20 @@ def Merge_multi_json(input_json_file: str,
 
 def resample_image(input_path: str, 
                    output_path: str, 
-                   scale_factor: str):
-    """✔使用GDAL对图像进行重采样
+                   resampleAlg: Optional[gdal.Dataset] = gdal.GRA_Bilinear,
+                   scale_factor: Optional[float] = 1.0,
+                   new_rows: Optional[int] = 512,
+                   new_cols: Optional[int] = 512) -> None:
+    """✔使用GDAL对图像进行重采样,可通过 scale_factor 或 
+        new_rows 和 new_cols 指定输出图像的大小
     
     Args:
         input_path (str): 输入图像路径
         output_path (str): 输出图像路径
-        scale_factor (float): 缩放因子
+        resampleAlg Optional(gdal.Dataset): 重采样算法，可选`gdal.GRA_Bilinear`,`gdal.GRA_NearestNeighbour`
+        scale_factor Optional(float): 缩放因子.
+        new_rows Optional[int]: 输出图像的新行数.
+        new_cols Optional[int]: 输出图像的新列数.
 
     Returns:
         输出重采样后的图像
@@ -811,15 +818,19 @@ def resample_image(input_path: str,
     input_ds = gdal.Open(input_path)
 
     # 获取输入图像的宽度和高度
-    cols = input_ds.RasterXSize
-    rows = input_ds.RasterYSize
-
-    # 计算输出图像的新宽度和新高度
-    new_cols = int(cols * scale_factor)
-    new_rows = int(rows * scale_factor)
+    old_rows = input_ds.RasterYSize  # 行
+    old_cols = input_ds.RasterXSize  # 列
+    
+    if not scale_factor == None:
+        # 计算输出图像的新宽度和新高度
+        new_cols = int(old_cols * scale_factor)
+        new_rows = int(old_rows * scale_factor)
+    else:
+        new_rows = new_rows
+        new_cols = new_cols
 
     # 使用gdal.Warp函数进行重采样
-    gdal.Warp(output_path, input_ds, format='GTiff', width=new_cols, height=new_rows)
+    gdal.Warp(output_path, input_ds, format='GTiff', width=new_cols, height=new_rows, resampleAlg = resampleAlg)
 
     # 关闭数据集
     input_ds = None

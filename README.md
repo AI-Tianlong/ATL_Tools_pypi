@@ -89,3 +89,4 @@ from ATL_Tools.ATL_gdal import (
 - 2024-05-20  v1.1.6  ATL_gdal 中 增加 `cut_image_with_overlap()`支持将大图裁切成指定尺寸的小图，并带有坐标。
 - 2024-05-28  v1.1.7  ATL_gdal 中 修改 v1.1.6 中新增函数 为`clip_big_image()`。ATL_gdal 中`crop_tif_with_json_zero()`和`crop_tif_with_json_nan()`支持传入参数 `img_path(str)` 或 `img_path(gdal.Dataset)`。
 - 2024-06-17  v1.1.9  ATL_gdal 中修复 `crop_tif_with_json_zero()`和`crop_tif_with_json_nan()` 对于传入`img_path(gdal.Dataset)`而导致错误的路径打印。
+- 2024-06-26  v1.2.0  ATL_gdal 中 `resample_image()`增加`new_rows`和`new_cols`可选参数，可以scater_factor缩放因子或指定高宽进行重采样。增加`resampleAlg`可选参数，支持通过`gdal`的重采样算法进行重采样。
