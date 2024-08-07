@@ -598,8 +598,9 @@ def raster_overlap(ds1, ds2, nodata1=None, nodata2=None):
 
 def crop_tif_with_json_zero(img_path: Union[str, gdal.Dataset],
                             output_path: str,
-                            geojson_path: str):
-    '''✔将带有坐标的图像按照json矢量进行裁切,矢量外无数据区域为0,适合训练
+                            geojson_path: str,
+                            nodata_value: int = 255):
+    '''✔将带有坐标的图像按照json矢量进行裁切, 矢量外无数据区域为0（可自定义）,适合训练
         也可以裁切mask标签。
 
     Args:
@@ -640,7 +641,7 @@ def crop_tif_with_json_zero(img_path: Union[str, gdal.Dataset],
         >>>     crop_tif_with_json_zero(label_gdal, label_output_path, json_path)
     '''
     if os.path.exists(output_path):
-        print(f"存在{output_path}, 已覆盖")
+        print(f"--> 存在{output_path}, 已覆盖")
         os.remove(output_path)
 
     # 打开栅格文件
@@ -660,6 +661,7 @@ def crop_tif_with_json_zero(img_path: Union[str, gdal.Dataset],
     warp_options = gdal.WarpOptions(cutlineDSName=geojson_path,
                                     cutlineWhere=None,
                                     cropToCutline=None,
+                                    dstNodata = nodata_value, # 设置裁剪后的无数据值为 255
                                     outputBounds=(xmin, ymin, xmax, ymax),
                                     dstSRS='EPSG:4326')  # 设置输出投影，这里使用EPSG:4326，即WGS84经纬度坐标系
 
@@ -670,15 +672,15 @@ def crop_tif_with_json_zero(img_path: Union[str, gdal.Dataset],
     raster_ds = None
     geojson_ds = None
     if isinstance(img_path, str):
-        print(f'根据矢量裁切{img_path}完成！无数据区域为0')
+        print(f'--> 根据矢量裁切{img_path}完成！无数据区域设置为 {nodata_value}')
     elif isinstance(img_path, gdal.Dataset):
-        print(f'根据矢量裁切完成！无数据区域为0')
+        print(f'--> 根据矢量裁切完成！无数据区域设置为 {nodata_value}')
 
 def crop_tif_with_json_nan(img_path: Union[str, gdal.Dataset],
                            output_path: str,
                            geojson_path: str,
                            add_alpha_chan: bool = False) -> None:
-    '''✔将带有坐标的图像按照json矢量进行裁切
+    '''✔将带有坐标的图像按照json矢量进行裁切,不能裁切标签，标签8位没有nan
     使无数据区域的值为nan,优先使用这个, 矢量外无数据区域为nan
 
     Args:
@@ -796,9 +798,9 @@ def Merge_multi_json(input_json_file: str,
 def resample_image(input_path: str, 
                    output_path: str, 
                    resampleAlg: Optional[gdal.Dataset] = gdal.GRA_Bilinear,
-                   scale_factor: Optional[float] = 1.0,
-                   new_rows: Optional[int] = 512,
-                   new_cols: Optional[int] = 512) -> None:
+                   scale_factor: Optional[float] = None,
+                   new_rows: Optional[int] = None,
+                   new_cols: Optional[int] = None) -> None:
     """✔使用GDAL对图像进行重采样,可通过 scale_factor 或 
         new_rows 和 new_cols 指定输出图像的大小
     
@@ -886,8 +888,6 @@ def clip_big_image(image_path: str,
        https://github.com/AI-Tianlong/Useful-Tools/blob/main/code/0-Sentinel-2-%E5%A4%84%E7%90%86%E4%BB%A3%E7%A0%81/9-%E9%87%8D%E6%96%B0%E5%B0%86%E6%AD%A5%E9%AA%A48%E7%9A%84%E5%B0%8F%E5%9B%BE%E5%90%88%E5%B9%B6%E6%88%90%E5%A4%A7%E5%9B%BE.py
    
     """
-
-
 
     img_gdal = gdal.Open(image_path)
     img_bit = img_gdal.GetRasterBand(1).DataType
