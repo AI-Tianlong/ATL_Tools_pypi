@@ -1,5 +1,5 @@
 # ATL_Tools 使用指南
-最新版本 v1.1.9
+最新版本 v1.2.3
 ## 0. 简介
 ATL_Tools 是一个由 [AI-Tianlong【GitHub】](https://github.com/AI-Tianlong)开发的工具集合，包含一些便利的小工具。
 如果您有新的模块添加，或者对现有模块有改进意见，欢迎提交 PR 至  [ATL_Tools_pypi 【GitHub Repo】](https://github.com/AI-Tianlong/ATL_Tools_pypi).
@@ -89,3 +89,16 @@ from ATL_Tools.ATL_gdal import (
 - 2024-05-20  v1.1.6  ATL_gdal 中 增加 `cut_image_with_overlap()`支持将大图裁切成指定尺寸的小图，并带有坐标。
 - 2024-05-28  v1.1.7  ATL_gdal 中 修改 v1.1.6 中新增函数 为`clip_big_image()`。ATL_gdal 中`crop_tif_with_json_zero()`和`crop_tif_with_json_nan()`支持传入参数 `img_path(str)` 或 `img_path(gdal.Dataset)`。
 - 2024-06-17  v1.1.9  ATL_gdal 中修复 `crop_tif_with_json_zero()`和`crop_tif_with_json_nan()` 对于传入`img_path(gdal.Dataset)`而导致错误的路径打印。
+- 2024-06-26  v1.2.0  ATL_gdal 中 `resample_image()`增加`new_rows`和`new_cols`可选参数，可以scater_factor缩放因子或指定高宽进行重采样。增加`resampleAlg`可选参数，支持通过`gdal`的重采样算法进行重采样。
+- 2024-06-26  v1.2.1  ATL_gdal 中修复`resample_image()`功能中，`new_rows`,`new_cols`,`scale_facotr`为`None`
+- 2024-07-24  v1.2.2  ATL_gdal 中`crop_tif_with_json_zero()`增加`nodata_value`参数，支持指定输出中无效数据的值，可在标签包含0时，指定无数据值为255。
+- 2024-08-07  v1.2.3  ATL_path 中增加`setup_logger()`函数，用于设置日志输出格式。
+- 2024-08-07  v1.2.4  ATL_path 中`setup_logger()`函数，添加`show_file_path (bool)` 用于控制是否在 log 中打印 输出log信息的文件位置，Defaults to False。
+
+# 5 打包命令
+```bash
+python -m build
+```
+```bash
+twine upload dist/*
+```

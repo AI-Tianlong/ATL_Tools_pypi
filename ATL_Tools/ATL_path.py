@@ -23,6 +23,34 @@ import os
 import os.path as osp
 from pathlib import Path
 from typing import List
+import logging
+ 
+# 配置日志输出格式
+
+def setup_logger(show_file_path: bool=False):
+    """配置日志输出格式, 格式化打印日志
+    Args:
+        show_file_path (bool, optional): 是否显示文件路径. Defaults to False.
+
+    Examples:
+        >>> logger = setup_logger()
+        >>> logger.info('info')
+        >>> logger.warning('warning')
+        >>> logger.error('error')
+    """
+    
+    if show_file_path: # 给formatter加上python文件的路径
+        formatter = logging.Formatter('【ATL-LOG】 %(asctime)s - %(levelname)s - %(pathname)s - %(message)s')
+    else:
+        formatter = logging.Formatter('【ATL-LOG】 %(asctime)s - %(levelname)s - %(message)s')
+        
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+    return logger
 
 def check_file_exist(filename, msg_tmpl='file "{}" does not exist'):
     if not osp.isfile(filename):
