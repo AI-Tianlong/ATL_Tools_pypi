@@ -158,10 +158,15 @@ def save_array_to_tif(
     Returns: 
         输出影像文件
     """
+    if len(img_array.shape)>2:
+        h,w,c= img_array.shape
+    elif len(img_array.shape)==2:
+        h,w = img_array.shape
+        c = 1
 
-    h,w,c= img_array.shape
+    img_array = np.expand_dims(img_array, axis=2) if c==1 else img_array
 
-    print(img_array.shape)
+    # print(img_array.shape)
     driver = gdal.GetDriverByName("GTiff")
     ds = driver.Create(out_path, w, h, c, Datatype)
     if not Transform==None:
