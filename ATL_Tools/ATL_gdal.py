@@ -189,9 +189,9 @@ def read_img_get_geo(img_path: str):
 
     Returns: 
         min_x: x方向最小值
-        max_y: y方向最大值
-        max_x: x方向最大值
         min_y: y方向最小值
+        max_x: x方向最大值
+        max_y: y方向最大值
     '''
 
     ds=gdal.Open(img_path)
@@ -199,12 +199,12 @@ def read_img_get_geo(img_path: str):
     xsize=ds.RasterXSize 
     ysize=ds.RasterYSize
     min_x=geotrans[0]
-    max_y=geotrans[3]
+    min_y=geotrans[3]
     max_x=geotrans[0]+xsize*geotrans[1]
-    min_y=geotrans[3]+ysize*geotrans[5]
+    max_y=geotrans[3]+ysize*geotrans[5]
     ds=None
     
-    return min_x, max_y, max_x, min_y
+    return min_x, min_y, max_x, max_y
 
 def ds_get_img_geo(GDAL_dataset: gdal.Dataset):
     '''读取dataset格式，计算影像角点的地理坐标或投影坐标
