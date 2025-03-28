@@ -199,11 +199,12 @@ def read_img_get_geo(img_path: str):
     xsize=ds.RasterXSize 
     ysize=ds.RasterYSize
     min_x=geotrans[0]
-    min_y=geotrans[3]
+    max_y=geotrans[3]
     max_x=geotrans[0]+xsize*geotrans[1]
-    max_y=geotrans[3]+ysize*geotrans[5]
+    min_y=geotrans[3]+ysize*geotrans[5]
     ds=None
     
+    # import pdb; pdb.set_trace()
     return min_x, min_y, max_x, max_y
 
 def ds_get_img_geo(GDAL_dataset: gdal.Dataset):

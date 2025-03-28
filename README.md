@@ -1,5 +1,5 @@
 # ATL_Tools 使用指南
-最新版本 v1.2.6
+最新版本 v1.2.8
 ## 0. 简介
 ATL_Tools 是一个由 [AI-Tianlong【GitHub】](https://github.com/AI-Tianlong)开发的工具集合，包含一些便利的小工具。
 如果您有新的模块添加，或者对现有模块有改进意见，欢迎提交 PR 至  [ATL_Tools_pypi 【GitHub Repo】](https://github.com/AI-Tianlong/ATL_Tools_pypi).
@@ -96,6 +96,8 @@ from ATL_Tools.ATL_gdal import (
 - 2024-08-07  v1.2.4  ATL_path 中`setup_logger()`函数，添加`show_file_path (bool)` 用于控制是否在 log 中打印 输出log信息的文件位置，Defaults to False。
 - 2024-08-27  v1.2.5  ATL_gdal 中`save_array_to_tif`函数，增加判断，以支持对单通道灰度图的支持。
 - 2025-01-17  v1.2.6  ATL_gdal 中修复`read_img_get_geo`返回值的顺序。
+- 2025-01-17  v1.2.7  ATL_gdal 中修复`read_img_get_geo`返回值的顺序。
+- 2025-03-28  v1.2.8  ATL_path 中 `find_data_list`函数，增加`recursive`参数，决定是否查找子文件夹下的符合条件文件，默认True。
 
 # 5 打包命令
 ```bash
