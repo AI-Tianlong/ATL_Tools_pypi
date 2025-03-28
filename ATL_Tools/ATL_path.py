@@ -120,7 +120,7 @@ def scandir(dir_path, suffix=None, recursive=False, case_sensitive=True):
     return _scandir(dir_path, suffix, recursive, case_sensitive)
 
 
-def find_data_list(img_root_path: str, suffix: str ='.jpg') -> List:
+def find_data_list(img_root_path: str, suffix: str ='.jpg', recursive=True) -> List:
     
     """根据给定的数据集根目录，找出其下所有符合后缀的数据集图片完整路径
 
@@ -135,7 +135,7 @@ def find_data_list(img_root_path: str, suffix: str ='.jpg') -> List:
     print(f'-- 正在读取数据集列表... "{img_root_path}" ')
 
     img_list = []
-    for img_name in scandir(img_root_path, suffix=suffix, recursive=True):
+    for img_name in scandir(img_root_path, suffix=suffix, recursive=recursive):
         if suffix in img_name:
             img_path = os.path.join(img_root_path, img_name)
             img_list.append(img_path)
